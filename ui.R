@@ -1,7 +1,3 @@
 fluidPage(
-  uiOutput(
-    ##Instruction
-    
-    ##Audio  
-  )
+  uiOutput('mainUI', align = 'center')
 )
