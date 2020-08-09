@@ -1,3 +1,7 @@
 fluidPage(
-  
+  uiOutput(
+    ##Instruction
+    
+    ##Audio  
+  )
 )
