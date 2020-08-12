@@ -95,12 +95,17 @@ function(input, output, session){
   
   observeEvent(input$questionSubmit, {
     if(!is.null(input$distractionInput)&!is.null(input$questionSubmit)){
-      if(input$distractionInput == multAns[input$questionSubmit]){
-        showNotification('correct', duration = 3)
-        rv$distractorTotalScore <- rv$distractorTotalScore + 1
-      } else {
+      if(is.numeric(input$distractionInput)){
+        if(input$distractionInput == multAns[input$questionSubmit]){
+          showNotification('correct', duration = 3)
+          rv$distractorTotalScore <- rv$distractorTotalScore + 1
+        } else {
+          
+        }
+      }else {
         showNotification('incorrect', duration = 3)
       }
+      
     }
     
     updateNumericInput(session, 'distractionInput', '', '')
@@ -285,7 +290,7 @@ function(input, output, session){
       )
     } else {
       list(
-        h2("Well done! You've completed all the tasks. Click the button below to download your score."),
+        h2("Well done! You've completed all the tasks. Click the button below to download your data."),
         br(),
         downloadButton('downloadButton', 'Download')
       )
