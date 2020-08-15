@@ -34,6 +34,11 @@ function(input, output, session){
     }
   })
   
+  observeEvent(input$yes, {
+    rv$transition <- rv$transition + 1
+    removeModal()
+  })
+  
   observeEvent(input$start, {
     rv$transition <- rv$transition + 1
     if(input$start == 1){
@@ -46,7 +51,15 @@ function(input, output, session){
   })
   
   observeEvent(input$nex, {
-    rv$transition <- rv$transition + 1
+    showModal(modalDialog(
+      list(
+        h2("Make sure you've listened to the audio clip. Are you ready to advance to the next page?")
+      ), 
+      title="Ready to move on?",
+      footer = tagList(actionButton("yes", "Yes"),
+                       modalButton('No')
+      )
+    ))
   })
   
   
@@ -90,7 +103,7 @@ function(input, output, session){
   output$distractorInstruction <- renderText('In this task, you will have five minutes to answer as many questions as possible. 
                                              \n Press the start button when you are ready to begin.')
   output$distractorQuestion <- renderText({
-    paste(c(multQs1[input$questionSubmit+1], '*', multQs2[input$questionSubmit+1]), collapse = "  ")
+    paste(c(multQs1[rv$question+1], '*', multQs2[rv$question+1]), collapse = "  ")
   })
   
   observeEvent(input$questionSubmit, {
@@ -99,11 +112,13 @@ function(input, output, session){
         if(input$distractionInput == multAns[input$questionSubmit]){
           showNotification('correct', duration = 3)
           rv$distractorTotalScore <- rv$distractorTotalScore + 1
+          rv$question <- rv$question+1
         } else {
-          
+          showNotification('incorrect', duration = 3)
+          rv$question <- rv$question+1
         }
       }else {
-        showNotification('incorrect', duration = 3)
+        showNotification('not a number', duration = 3)
       }
       
     }
