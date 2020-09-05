@@ -5,7 +5,8 @@ function(input, output, session){
                        recallList = list(),
                        remainingTime = 120,
                        count = 0,
-                       distractorTotalScore = 0
+                       distractorTotalScore = 0,
+                       condUnavailable = ''
                        )
   
   countdown <- reactiveTimer(100)
@@ -28,10 +29,10 @@ function(input, output, session){
   # })
   ##################
   
+  
+  
   observeEvent(input$prev, {
-    if(rv$transition > 1){
-      rv$transition <- rv$transition - 1
-    }
+    rv$transition <- rv$transition - 1
   })
   
   observeEvent(input$yes, {
@@ -39,13 +40,44 @@ function(input, output, session){
     removeModal()
   })
   
+  output$conditionUnavailable <- renderText(rv$condUnavailable)
+  
   observeEvent(input$start, {
-    rv$transition <- rv$transition + 1
-    if(input$start == 1){
-      if(input$condition == 'SoundClips/DRM_list_food.mp3'|input$condition == 'SoundClips/DRM_Convo_food.mp3'){
-        responseData <<- data.frame(Word = judgList_food, response = rep(NA, length(judgList_food)))
-      } else if(input$condition == 'SoundClips/DRM_Convo_school.mp3'|input$condition == 'SoundClips/DRM_list_school.mp3'){
-        responseData <<- data.frame(Word = judgList_school, response = rep(NA, length(judgList_school)))
+    
+    if(rv$transition == 1){
+      query <<- getQueryString()
+      
+      if(length(query) > 0){
+        if(names(query) == 'condition' & query %in% c(Food, School)){
+          if(query %in% Food){
+            responseData <<- data.frame(Word = judgList_food, response = rep(NA, length(judgList_food)))
+          } else if(query %in% School){
+            responseData <<- data.frame(Word = judgList_school, response = rep(NA, length(judgList_school)))
+          }
+          
+          if(query == 'FoodConvYoung'){
+            audioFile <<- 'SoundClips/DRM_Convo_food.mp3'
+          }else if(query == 'FoodListYoung'){
+            audioFile <<- 'SoundClips/DRM_list_food.mp3'
+          }else if(query == 'SchoolConvYoung'){
+            audioFile <<- 'SoundClips/DRM_Convo_school.mp3'
+          }else if(query == 'SchoolListYoung'){
+            audioFile <<- 'SoundClips/DRM_list_school.mp3'
+          }else if(query == 'FoodConvOld'){
+            audioFile <<- 'SoundClips/DRM.convo.food.older.mp3'
+          }else if(query == 'FoodListOld'){
+            audioFile <<- 'SoundClips/DRM.list.food.older.mp3'
+          }else if(query == 'SchoolConvOld'){
+            audioFile <<- 'SoundClips/DRM.convo.school.older.mp3'
+          }else if(query == 'SchoolListOld'){
+            audioFile <<- 'SoundClips/DRM.list.school.older.mp3'
+          }
+          
+          rv$transition <- rv$transition + 1
+          rv$condUnavailable <- 'works'
+        }
+      }else{
+        rv$condUnavailable <<- "Condition is not provided. Please adjust the URL for the condition."
       }
     }
   })
@@ -109,7 +141,7 @@ function(input, output, session){
   observeEvent(input$questionSubmit, {
     if(!is.null(input$distractionInput)&!is.null(input$questionSubmit)){
       if(is.numeric(input$distractionInput)){
-        if(input$distractionInput == multAns[input$questionSubmit]){
+        if(input$distractionInput == multAns[rv$question]){
           showNotification('correct', duration = 3)
           rv$distractorTotalScore <- rv$distractorTotalScore + 1
           rv$question <- rv$question+1
@@ -183,9 +215,9 @@ function(input, output, session){
     if(is.null(input$judgSubmit)){
       return('')
     }else{
-      if(input$condition == 'SoundClips/DRM_list_food.mp3'|input$condition == 'SoundClips/DRM_Convo_food.mp3'){
+      if(query %in% Food){
         return(judgList_food[input$judgSubmit + 1])
-      } else if(input$condition == 'SoundClips/DRM_Convo_school.mp3'|input$condition == 'SoundClips/DRM_list_school.mp3'){
+      } else if(query %in% School){
         return(judgList_school[input$judgSubmit + 1])
       }
     }
@@ -232,13 +264,7 @@ function(input, output, session){
       list(
         img(src = 'icon/kpuLogo.jpg'),
         br(),
-        radioButtons('condition', 
-                     'Select your condition:',
-                     c('Food1' = 'SoundClips/DRM_Convo_food.mp3',
-                       'Food2' = 'SoundClips/DRM_list_food.mp3',
-                       'School1' = 'SoundClips/DRM_Convo_school.mp3',
-                       'School2' = 'SoundClips/DRM_list_school.mp3'),
-                     inline = TRUE),
+        h2(textOutput('conditionUnavailable')),
         br(),
         fluidRow(actionButton('start', 'Start'), align = 'center')
       )
@@ -248,7 +274,7 @@ function(input, output, session){
         # textOutput('voice'),##For test#### uncomment if necessary
         h2('You will be listening to an audio clip. Try to remember as many nouns as you can. You will be asked to recall them later. Press the play button when you are ready.'),
         br(),
-        tags$audio(src = input$condition, type = 'audio/mp3', autplay = TRUE, controls = TRUE),
+        tags$audio(src = audioFile, type = 'audio/mp3', autplay = TRUE, controls = TRUE),
         br(),
         column(12, align = 'center', actionButton('nex', 'Next'))
       )
@@ -256,7 +282,7 @@ function(input, output, session){
       ##Recalling as many words as they can
       ##They have 2 minutes to recall  
       list(
-        h2('Good work! Please try to recall as many noun as you can. Type in each word below and press the add button or press the "enter" key to add in each word.'),
+        h2('Good work! Please try to recall as many nouns as you can. Type in each word below and press the add button or press the "enter" key to add in each word.'),
         br(),
         h2(textOutput('timer')),
         textInput('recallInput', ''),
